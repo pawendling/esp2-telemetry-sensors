@@ -174,16 +174,20 @@ void loop() {
 
     // Build JSON payload
   char payload[500];
-  snprintf(payload, sizeof(payload),
+snprintf(payload, sizeof(payload),
     "{"
-      "\"DTH1_Temp\": %.1f, \"DTH1_RH\": %.0f, \"AQI\": %d, \"VOC\": %d, \"CO2\": %d"
+      "\"DTH1_Temp\": %.1f, \"DTH1_RH\": %.0f, "
+      "\"DTH2_Temp\": %.1f, \"DTH2_RH\": %.0f, "
+      "\"AQI\": %d, \"VOC\": %d, \"CO2\": %d"
     "}",
-    t1, h1, aqi, tvoc, eco2
-  );
+    t1, h1,
+    t2, h2,
+    aqi, tvoc, eco2
+);
 
   Serial.print("Publishing: ");
   Serial.println(payload);
 
   client.publish(mqtt_topic, payload);
-  delay(2000);
+  delay(5000);
 }

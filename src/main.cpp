@@ -1,5 +1,8 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include <WiFi.h>
+#include <PubSubClient.h>
+
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <DHT.h>
@@ -24,6 +27,54 @@ Adafruit_AHTX0 aht;
 
 // ---------------- ENS160 ----------------
 SparkFun_ENS160 ens160;
+
+// --- WiFi credentials ---
+const char* ssid     = "Saddleback-2.4G";
+const char* password = "1492cstob";
+
+// --- MQTT Broker ---
+const char* mqtt_server = "192.168.1.100";
+const int   mqtt_port   = 1883;
+const char* mqtt_topic  = "sensors/esp32-2";
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+// ---------------- MQTT Reconnect ----------------
+void reconnect() {
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    if (client.connect("ESP32-2")) {
+      Serial.println("connected");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" retrying in 5 seconds");
+      delay(5000);
+    }
+  }
+}
+
+// ----------------------------
+// Connect to WiFi
+// ----------------------------
+void setup_wifi() {
+  Serial.print("Connecting to WiFi: ");
+  Serial.println(ssid);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("\nWiFi connected");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
+
+}
 
 void setup()
 {
@@ -67,12 +118,24 @@ void setup()
   }
   ens160.setOperatingMode(SFE_ENS160_STANDARD);
 
+   // ---- WiFi ----
+  setup_wifi(); 
+
+  // ---- MQTT ----
+  client.setServer(mqtt_server, mqtt_port);
+
+
   Serial.println("End of init"); 
   delay(1000);
 }
 
-void loop()
-{
+void loop() {
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
+
+
   // -------- DHT22 #1 --------
   float h1 = dht1.readHumidity();
   float t1 = dht1.readTemperature(true);
@@ -104,9 +167,23 @@ void loop()
 
   display.printf("DTH-1: %.1fF %.0f%%\nDTH-2: %.1fF %.0f%%\n", t1, h1, t2, h2);
   display.printf("AHT21: %.1fF %.0f%%\n", ahtTempF, ahtHum);
-  display.printf("AQI %d TVOC %d CO2 %d\n", aqi, tvoc, eco2);
+  display.printf("AQI %d VOC %d CO2 %d\n", aqi, tvoc, eco2);
 
   display.display();
 
+
+    // Build JSON payload
+  char payload[500];
+  snprintf(payload, sizeof(payload),
+    "{"
+      "\"DTH1_Temp\": %.1f, \"DTH1_RH\": %.0f, \"AQI\": %d, \"VOC\": %d, \"CO2\": %d"
+    "}",
+    t1, h1, aqi, tvoc, eco2
+  );
+
+  Serial.print("Publishing: ");
+  Serial.println(payload);
+
+  client.publish(mqtt_topic, payload);
   delay(2000);
 }

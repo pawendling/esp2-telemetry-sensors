@@ -18,4 +18,11 @@
 | Interchangeability        | fully interchangeable |
 | Dimensions                |  small size 14*18*5.5 mm; big size 22*28*5 mm |
 ## ENS160 - AQI, VOC, and CO2 
+<img width="984" height="691" alt="image" src="https://github.com/user-attachments/assets/6abcab34-2f10-4919-ae71-a50aa44fbf93" />
+
 ## AHT21 - Temperature and Humidity 
+<img width="320" height="254" alt="image" src="https://github.com/user-attachments/assets/a3673f4e-21fb-4dab-b495-1b0de5f547c9" />
+<img width="558" height="448" alt="image" src="https://github.com/user-attachments/assets/ec50438b-3d0a-45f2-b0a1-49298f146790" />
+
+<img width="579" height="482" alt="image" src="https://github.com/user-attachments/assets/e3d99901-b26b-4adc-b9d0-b2c51c995213" />
+

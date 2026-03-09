@@ -1,5 +1,8 @@
 # ESP32 Code for: MQTT, Display, and Sensors 
 
+## Project Board
+<img width="1086" height="1179" alt="image" src="https://github.com/user-attachments/assets/501e65c9-9d2d-46c5-b6d8-0cf295f8e98f" />
+
 ## ESP32
 | Iten | Description | 
 | -- | -- |
@@ -9,7 +12,15 @@
 |Memory Storage Capacity| 	2 MB |
 |CPU Speed| 2.4E+2 MHz |
 
-<img width="866" height="557" alt="image" src="https://github.com/user-attachments/assets/5c8bebec-abe5-4f9d-ae6e-93db2a0ac42a" />
+<img width="800" alt="image" src="https://github.com/user-attachments/assets/5c8bebec-abe5-4f9d-ae6e-93db2a0ac42a" />
+
+## OLED Display 
+
+```
+Resolution: 128 x 32 0.91 Inch OLED display, no need backlight, self-illumination, Display Color: White.
+Low power consumptio; SSD 1306 oled display; I2C oled display, IIC (I2C communications) simplifies connection.
+```
+<img width="500"  alt="image" src="https://github.com/user-attachments/assets/3520a26a-5b7f-42c1-877f-45e88eb47b43" />
 
 
 ## DHT22 - Temperature and Humidity 
@@ -29,6 +40,12 @@
 | Sensing period            | Average: 2s |
 | Interchangeability        | fully interchangeable |
 | Dimensions                |  small size 14*18*5.5 mm; big size 22*28*5 mm |
+
+<br>
+<img width="2026" height="649" alt="image" src="https://github.com/user-attachments/assets/1509ed1a-566a-45f7-8d3a-0b0f9fbe5af8" />
+<br> 
+<img width="2017" height="650" alt="image" src="https://github.com/user-attachments/assets/6328ef73-7eac-4709-9a73-060554bad880" />
+
 ## ENS160 - AQI, VOC, and CO2 
 <img width="400" alt="image" src="https://github.com/user-attachments/assets/6abcab34-2f10-4919-ae71-a50aa44fbf93" />
 
@@ -66,6 +83,7 @@ This channel spikes when:
 - Strong cleaners are used
 - New furniture off‑gasses
 
+<img width="2041" height="648" alt="image" src="https://github.com/user-attachments/assets/1709fe41-d239-4a19-b902-d8a643267768" />
 
 
 ## AHT21 - Temperature and Humidity 

@@ -1,7 +1,7 @@
 # ESP32 Code for: MQTT, Display, and Sensors 
 
 ## Project Board
-<img width="1086" height="1179" alt="image" src="https://github.com/user-attachments/assets/501e65c9-9d2d-46c5-b6d8-0cf295f8e98f" />
+<img width="700"  alt="image" src="https://github.com/user-attachments/assets/501e65c9-9d2d-46c5-b6d8-0cf295f8e98f" />
 
 ## ESP32
 | Iten | Description | 

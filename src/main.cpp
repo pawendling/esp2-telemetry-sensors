@@ -30,7 +30,7 @@ SparkFun_ENS160 ens160;
 
 // --- WiFi credentials ---
 const char* ssid     = "Saddleback-2.4G";
-const char* password = "1492cstob";
+const char* password = "";
 
 // --- MQTT Broker ---
 const char* mqtt_server = "192.168.1.100";
@@ -189,5 +189,7 @@ snprintf(payload, sizeof(payload),
   Serial.println(payload);
 
   client.publish(mqtt_topic, payload);
+
+
   delay(5000);
 }

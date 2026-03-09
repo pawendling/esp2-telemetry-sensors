@@ -1,5 +1,17 @@
 # ESP32 Code for: MQTT, Display, and Sensors 
 
+## ESP32
+| Iten | Description | 
+| -- | -- |
+|Brand	| AITRIP | 
+|Model Name	| ESP-WROOM-32 |
+|Ram Memory Installed Size	| 512 MB |
+|Memory Storage Capacity| 	2 MB |
+|CPU Speed| 2.4E+2 MHz |
+
+<img width="866" height="557" alt="image" src="https://github.com/user-attachments/assets/5c8bebec-abe5-4f9d-ae6e-93db2a0ac42a" />
+
+
 ## DHT22 - Temperature and Humidity 
 <img width="643" height="398" alt="image" src="https://github.com/user-attachments/assets/ffa023a5-9583-4e64-8a78-93343470693b" />
 

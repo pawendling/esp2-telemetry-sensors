@@ -149,9 +149,39 @@ void loop() {
   float h1 = dht1.readHumidity();
   float t1 = dht1.readTemperature(true);
 
+  if (isnan(t1) || isnan(h1)) {
+    Serial.println("DHT22-1 NaN — toggling data pin");
+
+    pinMode(DHTPIN1, OUTPUT);
+    digitalWrite(DHTPIN1, LOW);
+    delay(20);   // 20ms reset pulse
+    pinMode(DHTPIN1, INPUT_PULLUP);
+
+    dht1.begin();
+    delay(250);
+
+    t1 = dht1.readTemperature();
+    h1 = dht1.readHumidity();
+  }
+
   // -------- DHT22 #2 --------
   float h2 = dht2.readHumidity();
   float t2 = dht2.readTemperature(true);
+
+  if (isnan(t2) || isnan(h2)) {
+    Serial.println("DHT22-2 NaN — toggling data pin");
+
+    pinMode(DHTPIN2, OUTPUT);
+    digitalWrite(DHTPIN2, LOW);
+    delay(20);   // 20ms reset pulse
+    pinMode(DHTPIN2, INPUT_PULLUP);
+
+    dht2.begin();
+    delay(250);
+
+    t2 = dht2.readTemperature();
+    h2 = dht2.readHumidity();
+  }
 
   // -------- AHT22 --------
   sensors_event_t humEvent, tempEvent;

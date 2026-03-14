@@ -5,10 +5,13 @@
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+
 #include <DHT.h>
 #include <Adafruit_AHTX0.h>
 #include <SparkFun_ENS160.h>
+#include <SensirionI2CScd4x.h>
 
+#include "config.h"
 // ---------------- OLED ----------------
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 32
@@ -22,20 +25,23 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 DHT dht1(DHTPIN1, DHTTYPE);
 DHT dht2(DHTPIN2, DHTTYPE);
 
-// ---------------- AHT21 ----------------
+// ---------------- AHT22 ----------------
 Adafruit_AHTX0 aht;
 
-// ---------------- ENS160 ----------------
-SparkFun_ENS160 ens160;
+// ---------------- ENS161 ----------------
+SparkFun_ENS160 ens161;
+
+// ---------------- SCD40 ----------------
+SensirionI2cScd4x scd40;
 
 // --- WiFi credentials ---
-const char* ssid     = "Saddleback-2.4G";
-const char* password = "";
+const char* ssid     = WIFI_SSID;
+const char* password = WIFI_PASSWORD;
 
 // --- MQTT Broker ---
-const char* mqtt_server = "192.168.1.100";
-const int   mqtt_port   = 1883;
-const char* mqtt_topic  = "sensors/esp32-2";
+const char* mqtt_server = MQTT_SERVER;
+const int   mqtt_port   = MQTT_PORT;
+const char* mqtt_topic  = MQTT_TOPIC;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -55,9 +61,7 @@ void reconnect() {
   }
 }
 
-// ----------------------------
-// Connect to WiFi
-// ----------------------------
+// ---------------- WiFi ----------------
 void setup_wifi() {
   Serial.print("Connecting to WiFi: ");
   Serial.println(ssid);
@@ -73,18 +77,17 @@ void setup_wifi() {
   Serial.println("\nWiFi connected");
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
-
 }
 
-void setup()
+void setup() 
 {
-  
+
   Serial.begin(115200);
   delay(300);
 
   Wire.begin(21, 22);
 
-  Serial.println("Scanning...");
+   Serial.println("Scanning...");
   for (byte address = 1; address < 127; address++) {
     Wire.beginTransmission(address);
     if (Wire.endTransmission() == 0) {
@@ -92,7 +95,7 @@ void setup()
       Serial.println(address, HEX);
     }
   }
-  
+
   // OLED init
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println("SSD1306 init failed");
@@ -107,25 +110,32 @@ void setup()
   dht1.begin();
   dht2.begin();
 
-  // AHT21
+  // AHT22
   if (!aht.begin()) {
-    Serial.println("AHT21 init failed");
+    Serial.println("AHT22 init failed");
   }
 
-  // ENS160 init
-  if (!ens160.begin(Wire, 0x53)) {
-    Serial.println("ENS160 not detected");
+  // ENS161 init
+  if (!ens161.begin(Wire, 0x53)) {
+    Serial.println("ENS161 not detected");
   }
-  ens160.setOperatingMode(SFE_ENS160_STANDARD);
+  ens161.setOperatingMode(SFE_ENS160_STANDARD);
 
-   // ---- WiFi ----
-  setup_wifi(); 
+  // SCD40 init
+  scd40.begin(Wire, 0x62);
+  scd40.stopPeriodicMeasurement();
+  delay(20);
+  scd40.startPeriodicMeasurement();
+  Serial.println("SCD40 started");
 
-  // ---- MQTT ----
+  // WiFi + MQTT
+  setup_wifi();
+
+   // ---- MQTT ----
   client.setServer(mqtt_server, mqtt_port);
 
 
-  Serial.println("End of init"); 
+  Serial.println("End of init");
   delay(1000);
 }
 
@@ -135,7 +145,6 @@ void loop() {
   }
   client.loop();
 
-
   // -------- DHT22 #1 --------
   float h1 = dht1.readHumidity();
   float t1 = dht1.readTemperature(true);
@@ -144,7 +153,7 @@ void loop() {
   float h2 = dht2.readHumidity();
   float t2 = dht2.readTemperature(true);
 
-  // -------- AHT21 --------
+  // -------- AHT22 --------
   sensors_event_t humEvent, tempEvent;
   aht.getEvent(&humEvent, &tempEvent);
 
@@ -152,44 +161,63 @@ void loop() {
   float ahtTempF = ahtTempC * 9.0 / 5.0 + 32.0;
   float ahtHum   = humEvent.relative_humidity;
 
-  // Send compensation data to ENS160
-  ens160.setTempCompensationCelsius(ahtTempC);
-  ens160.setRHCompensationFloat(ahtHum);
+  // ENS161 compensation
+  ens161.setTempCompensationCelsius(ahtTempC);
+  ens161.setRHCompensationFloat(ahtHum);
 
-  // Read ENS160 values
-  uint8_t aqi = ens160.getAQI();
-  uint16_t tvoc = ens160.getTVOC();
-  uint16_t eco2 = ens160.getECO2();
+  // ENS161 readings
+  uint8_t aqi   = ens161.getAQI();
+  uint16_t tvoc = ens161.getTVOC();
+  uint16_t eco2 = ens161.getECO2();
+
+  // -------- SCD40 --------
+  uint16_t co2 = 0;
+  float scdTemp = 0;
+  float scdHum = 0;
+
+  bool dataReady = false;
+  scd40.getDataReadyStatus(dataReady);
+
+  if (dataReady) {
+      uint16_t error = scd40.readMeasurement(co2, scdTemp, scdHum);
+      if (!error && co2 != 0) {
+          scdTemp = scdTemp * 9.0 / 5.0 + 32.0;
+          Serial.printf("SCD40: CO2=%u ppm Temp=%.2fC RH=%.2f\n", co2, scdTemp, scdHum);
+      }
+  }
 
   // -------- OLED Output --------
   display.clearDisplay();
   display.setCursor(0, 0);
 
   display.printf("DTH-1: %.1fF %.0f%%\nDTH-2: %.1fF %.0f%%\n", t1, h1, t2, h2);
-  display.printf("AHT21: %.1fF %.0f%%\n", ahtTempF, ahtHum);
+  display.printf("AHT21: %.1fF %.0f%%  %d\n", ahtTempF, ahtHum, co2);
   display.printf("AQI %d VOC %d CO2 %d\n", aqi, tvoc, eco2);
 
   display.display();
 
 
-    // Build JSON payload
+  // -------- MQTT JSON Payload --------
   char payload[500];
-snprintf(payload, sizeof(payload),
+  snprintf(payload, sizeof(payload),
     "{"
       "\"DTH1_Temp\": %.1f, \"DTH1_RH\": %.0f, "
       "\"DTH2_Temp\": %.1f, \"DTH2_RH\": %.0f, "
-      "\"AQI\": %d, \"VOC\": %d, \"CO2\": %d"
+      "\"AHT_TempF\": %.1f, \"AHT_RH\": %.0f, "
+      "\"AQI\": %u, \"VOC\": %u, \"CO2\": %u, "
+      "\"SCD40_CO2\": %u, \"SCD40_Temp\": %.2f, \"SCD40_RH\": %.2f"
     "}",
     t1, h1,
     t2, h2,
-    aqi, tvoc, eco2
-);
+    ahtTempF, ahtHum,
+    aqi, tvoc, eco2,
+    co2, scdTemp, scdHum
+  );
 
   Serial.print("Publishing: ");
   Serial.println(payload);
 
   client.publish(mqtt_topic, payload);
-
 
   delay(5000);
 }

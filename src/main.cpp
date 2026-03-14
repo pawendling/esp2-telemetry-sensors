@@ -182,7 +182,7 @@ void loop() {
       uint16_t error = scd40.readMeasurement(co2, scdTemp, scdHum);
       if (!error && co2 != 0) {
           scdTemp = scdTemp * 9.0 / 5.0 + 32.0;
-          Serial.printf("SCD40: CO2=%u ppm Temp=%.2fC RH=%.2f\n", co2, scdTemp, scdHum);
+          // Serial.printf("SCD40: CO2=%u ppm Temp=%.2fC RH=%.2f\n", co2, scdTemp, scdHum);
       }
   }
 
@@ -199,20 +199,47 @@ void loop() {
 
   // -------- MQTT JSON Payload --------
   char payload[500];
-  snprintf(payload, sizeof(payload),
-    "{"
-      "\"DTH1_Temp\": %.1f, \"DTH1_RH\": %.0f, "
-      "\"DTH2_Temp\": %.1f, \"DTH2_RH\": %.0f, "
-      "\"AHT_TempF\": %.1f, \"AHT_RH\": %.0f, "
-      "\"AQI\": %u, \"VOC\": %u, \"CO2\": %u, "
-      "\"SCD40_CO2\": %u, \"SCD40_Temp\": %.2f, \"SCD40_RH\": %.2f"
-    "}",
-    t1, h1,
-    t2, h2,
-    ahtTempF, ahtHum,
-    aqi, tvoc, eco2,
-    co2, scdTemp, scdHum
-  );
+  char *p = payload;
+
+  p += sprintf(p, "{");
+
+  bool first = true;
+
+  #define ADD_FLOAT(key, val, fmt) \
+    if (!isnan(val)) { \
+      if (!first) p += sprintf(p, ", "); \
+      p += sprintf(p, "\"" key "\": " fmt, val); \
+      first = false; \
+    }
+
+  #define ADD_UINT(key, val) \
+    if (!isnan((float)val)) { \
+      if (!first) p += sprintf(p, ", "); \
+      p += sprintf(p, "\"" key "\": %u", val); \
+      first = false; \
+    }
+
+  // Add fields conditionally
+  ADD_FLOAT("DTH1_Temp", t1, "%.1f");
+  ADD_FLOAT("DTH1_RH",   h1, "%.0f");
+
+  ADD_FLOAT("DTH2_Temp", t2, "%.1f");
+  ADD_FLOAT("DTH2_RH",   h2, "%.0f");
+
+  ADD_FLOAT("AHT_TempF", ahtTempF, "%.1f");
+  ADD_FLOAT("AHT_RH",    ahtHum, "%.0f");
+
+  ADD_UINT("AQI",  aqi);
+  ADD_UINT("VOC",  tvoc);
+  ADD_UINT("CO2",  eco2);
+
+  ADD_UINT("SCD40_CO2", co2);
+  ADD_FLOAT("SCD40_Temp", scdTemp, "%.2f");
+  ADD_FLOAT("SCD40_RH",   scdHum, "%.2f");
+
+  p += sprintf(p, "}");
+
+
 
   Serial.print("Publishing: ");
   Serial.println(payload);

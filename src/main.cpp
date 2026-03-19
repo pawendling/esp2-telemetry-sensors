@@ -79,6 +79,17 @@ void setup_wifi() {
   Serial.println(WiFi.localIP());
 }
 
+// ----------------------------
+// ESP32 Internal Temperature
+// ----------------------------
+extern "C" {
+  uint8_t temprature_sens_read();
+}
+
+float readEsp32InternalTempC() {
+  return (temprature_sens_read() - 32) / 1.8;
+}
+
 void setup() 
 {
 
@@ -139,11 +150,15 @@ void setup()
   delay(1000);
 }
 
+
 void loop() {
   if (!client.connected()) {
     reconnect();
   }
   client.loop();
+  
+  // ESP32 internal temperature
+  float espC = readEsp32InternalTempC();
 
   // -------- DHT22 #1 --------
   float h1 = dht1.readHumidity();
@@ -182,7 +197,7 @@ void loop() {
     t2 = dht2.readTemperature();
     h2 = dht2.readHumidity();
   }
-
+  
   // -------- AHT22 --------
   sensors_event_t humEvent, tempEvent;
   aht.getEvent(&humEvent, &tempEvent);
@@ -223,6 +238,7 @@ void loop() {
   display.printf("DTH-1: %.1fF %.0f%%\nDTH-2: %.1fF %.0f%%\n", t1, h1, t2, h2);
   display.printf("AHT21: %.1fF %.0f%%  %d\n", ahtTempF, ahtHum, co2);
   display.printf("AQI %d VOC %d CO2 %d\n", aqi, tvoc, eco2);
+  
 
   display.display();
 
@@ -267,6 +283,8 @@ void loop() {
   ADD_FLOAT("SCD40_Temp", scdTemp, "%.2f");
   ADD_FLOAT("SCD40_RH",   scdHum, "%.2f");
 
+  ADD_FLOAT("esp32_internal",espC , "%.2f");
+
   p += sprintf(p, "}");
 
 
@@ -274,7 +292,10 @@ void loop() {
   Serial.print("Publishing: ");
   Serial.println(payload);
 
-  client.publish(mqtt_topic, payload);
+  bool ok = client.publish(mqtt_topic, payload);
+  if (!ok) {
+    Serial.println("MQTT Publish FAILED");
+  }
 
   delay(5000);
 }

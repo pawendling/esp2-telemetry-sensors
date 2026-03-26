@@ -161,41 +161,53 @@ void loop() {
   float espC = readEsp32InternalTempC();
 
   // -------- DHT22 #1 --------
-  float h1 = dht1.readHumidity();
-  float t1 = dht1.readTemperature(true);
+  float t1, t1_raw, h1, h1_raw; 
+  h1_raw = dht1.readHumidity();
+  t1_raw = dht1.readTemperature(true);
 
-  if (isnan(t1) || isnan(h1)) {
+  if (isnan(t1_raw) || isnan(h1_raw)) {
     Serial.println("DHT22-1 NaN — toggling data pin");
 
     pinMode(DHTPIN1, OUTPUT);
     digitalWrite(DHTPIN1, LOW);
     delay(20);   // 20ms reset pulse
     pinMode(DHTPIN1, INPUT_PULLUP);
+    delay(5000);
 
     dht1.begin();
-    delay(250);
+    delay(1000);
+    h1_raw = dht1.readHumidity();
+    t1_raw = dht1.readTemperature(true);
 
-    t1 = dht1.readTemperature();
-    h1 = dht1.readHumidity();
+  }
+  else 
+  {  t1 = t1_raw; 
+     h1 = h1_raw; 
   }
 
-  // -------- DHT22 #2 --------
-  float h2 = dht2.readHumidity();
-  float t2 = dht2.readTemperature(true);
 
-  if (isnan(t2) || isnan(h2)) {
+  // -------- DHT22 #2 --------
+  float t2, t2_raw, h2, h2_raw; 
+  h2_raw = dht2.readHumidity();
+  t2_raw = dht2.readTemperature(true);
+
+  if (isnan(t2_raw) || isnan(h2_raw)) {
     Serial.println("DHT22-2 NaN — toggling data pin");
 
     pinMode(DHTPIN2, OUTPUT);
     digitalWrite(DHTPIN2, LOW);
     delay(20);   // 20ms reset pulse
     pinMode(DHTPIN2, INPUT_PULLUP);
-
+    delay(5000);
+    
     dht2.begin();
-    delay(250);
-
-    t2 = dht2.readTemperature();
-    h2 = dht2.readHumidity();
+    delay(1000);
+    h2_raw = dht2.readHumidity();
+    t2_raw = dht2.readTemperature(true);
+  }
+  else 
+  {  t2 = t2_raw; 
+     h2 = h2_raw; 
   }
   
   // -------- AHT22 --------
@@ -223,13 +235,21 @@ void loop() {
   bool dataReady = false;
   scd40.getDataReadyStatus(dataReady);
 
-  if (dataReady) {
-      uint16_t error = scd40.readMeasurement(co2, scdTemp, scdHum);
-      if (!error && co2 != 0) {
-          scdTemp = scdTemp * 9.0 / 5.0 + 32.0;
-          // Serial.printf("SCD40: CO2=%u ppm Temp=%.2fC RH=%.2f\n", co2, scdTemp, scdHum);
-      }
-  }
+if (dataReady) {
+
+    uint16_t co2_raw;
+    float temp_raw;
+    float hum_raw;
+
+    uint16_t error = scd40.readMeasurement(co2_raw, temp_raw, hum_raw);
+
+    // Only accept the reading if it's valid
+    if (!error && co2_raw != 0) {
+        scdTemp = temp_raw * 9.0 / 5.0 + 32.0;  // convert to F
+        scdHum  = hum_raw;
+        co2     = co2_raw;
+    }
+}
 
   // -------- OLED Output --------
   display.clearDisplay();
